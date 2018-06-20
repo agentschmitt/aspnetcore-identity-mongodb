@@ -4,7 +4,9 @@
 
 namespace Microsoft.AspNetCore.Identity.MongoDB
 {
+	using System.Collections.Generic;
 	using System.Linq;
+	using System.Security.Claims;
 	using System.Threading;
 	using System.Threading.Tasks;
 	using global::MongoDB.Driver;
@@ -16,8 +18,7 @@ namespace Microsoft.AspNetCore.Identity.MongoDB
 	///     When passing a cancellation token, it will only be used if the operation requires a database interaction.
 	/// </summary>
 	/// <typeparam name="TRole">Needs to extend the provided IdentityRole type.</typeparam>
-	public class RoleStore<TRole> : IQueryableRoleStore<TRole>
-		// todo IRoleClaimStore<TRole>
+	public class RoleStore<TRole> : IQueryableRoleStore<TRole>, IRoleClaimStore<TRole>
 		where TRole : IdentityRole
 	{
 		private readonly IMongoCollection<TRole> _Roles;
@@ -75,6 +76,21 @@ namespace Microsoft.AspNetCore.Identity.MongoDB
 		public virtual Task<TRole> FindByNameAsync(string normalizedName, CancellationToken token)
 			=> _Roles.Find(r => r.NormalizedName == normalizedName)
 				.FirstOrDefaultAsync(token);
+
+		public virtual async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken token)
+			=> role.Claims.Select(c => c.ToSecurityClaim()).ToList();
+
+		public Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken)
+		{
+			role.AddClaim(claim);
+			return Task.FromResult(0);
+		}
+
+		public Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken)
+		{
+			role.RemoveClaim(claim);
+			return Task.FromResult(0);
+		}
 
 		public virtual IQueryable<TRole> Roles
 			=> _Roles.AsQueryable();
