@@ -109,6 +109,7 @@ csx
 AppPackages/
 
 # Others
+artifacts
 sql/
 *.Cache
 ClientBin/
