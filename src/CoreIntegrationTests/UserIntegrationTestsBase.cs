@@ -17,13 +17,29 @@
 		// note: for now we'll have interfaces to both the new and old apis for MongoDB, that way we don't have to update all the tests at once and risk introducing bugs
 		protected IMongoDatabase DatabaseNewApi;
 		protected IServiceProvider ServiceProvider;
-		private readonly string _TestingConnectionString = $"mongodb://localhost:27017/{IdentityTesting}";
+
 		private const string IdentityTesting = "identity-testing";
+
+		private string ConnectionString
+		{
+			get
+			{
+				var connectionBuilder = new MongoUrlBuilder
+				{
+					Username = IdentityTesting,
+					Password = "test",
+					Server = new MongoServerAddress("localhost", 27017),
+					DatabaseName = IdentityTesting
+				};
+
+				return connectionBuilder.ToString();
+			}
+		}
 
 		[SetUp]
 		public void BeforeEachTest()
 		{
-			var client = new MongoClient(_TestingConnectionString);
+			var client = new MongoClient(ConnectionString);
 
 			// todo move away from GetServer which could be deprecated at some point
 			Database = client.GetServer().GetDatabase(IdentityTesting);
@@ -52,7 +68,7 @@
 			optionsProvider = optionsProvider ?? (options => { });
 			services.AddIdentity<TUser, TRole>(optionsProvider)
 				.AddDefaultTokenProviders()
-				.RegisterMongoStores<TUser, TRole>(_TestingConnectionString);
+				.RegisterMongoStores<TUser, TRole>(ConnectionString);
 
 			services.AddLogging();
 
